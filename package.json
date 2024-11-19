@@ -2,6 +2,20 @@
   "name": "move-terraform-resources",
   "license": "Apache-2.0",
   "version": "0.1.0",
+  "main": "dist/main.cjs",
+  "keywords": [
+    "terraform"
+  ],
+  "bin": {
+    "move-terraform-resources": "./dist/main.cjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc && mv dist/main.js dist/main.cjs",
+    "prepack": "npm run build"
+  },
   "devDependencies": {
     "@types/node": "22.9.0",
     "typescript": "5.6.3"
