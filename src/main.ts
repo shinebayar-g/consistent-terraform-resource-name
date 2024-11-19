@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { Command } from 'commander';
 import * as fs from 'node:fs';
 import * as process from 'node:process';
