@@ -1,7 +1,7 @@
 {
   "name": "move-terraform-resources",
   "license": "Apache-2.0",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "main": "dist/main.cjs",
   "keywords": [
     "terraform"
@@ -17,7 +17,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc && mv dist/main.js dist/main.cjs",
+    "add_shebang": "perl -i -pe 's,#!/usr/bin/env tsx,#!/usr/bin/env node,g' dist/main.cjs",
+    "build": "rm -rf dist && tsc && mv dist/main.js dist/main.cjs && npm run add_shebang",
     "prepack": "npm run build"
   },
   "devDependencies": {
