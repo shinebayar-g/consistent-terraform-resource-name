@@ -6,6 +6,10 @@
   "keywords": [
     "terraform"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shinebayar-g/move-terraform-resources.git"
+  },
   "bin": {
     "move-terraform-resources": "./dist/main.cjs"
   },
