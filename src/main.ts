@@ -23,12 +23,17 @@ async function findResources(target: string, newModule?: string): Promise<Map<st
      */
     const resources: Map<string, string> = new Map();
 
+    let lastLine = '';
     for await (const l of rl) {
+        /**
+         * Ignore comments
+         */
+        if (l.startsWith('//') || l.startsWith('#')) {
+            continue;
+        }
+
         let writeLine = l;
-        if (
-            (!l.startsWith('//') || !l.startsWith('#')) &&
-            (l.includes('resource ') || l.includes('module '))
-        ) {
+        if (l.includes('resource ') || l.includes('module ')) {
             const from = l
                 .replaceAll('resource ', '')
                 .replaceAll('{', '')
@@ -69,7 +74,13 @@ async function findResources(target: string, newModule?: string): Promise<Map<st
                 writeLine = updatedLine;
             }
         }
-        writeStream.write(writeLine + '\n');
+        if (writeLine !== '') {
+            writeStream.write(writeLine + '\n');
+        }
+        if (lastLine === '}') {
+            writeStream.write('\n');
+        }
+        lastLine = writeLine;
     }
 
     writeStream.end();
@@ -106,14 +117,19 @@ async function main() {
     const movedFileName = `${targetFileName}.moved.tf`;
     const moved = fs.createWriteStream(movedFileName);
 
+    let counter = 0;
     for (const [from, to] of resources) {
         if (from !== to) {
-            moved.write(`moved {
+            const writeLine = `moved {
   from = ${from}
   to   = ${to}
-}
+}`;
+            moved.write(writeLine + '\n');
 
-`);
+            if (counter < resources.size - 1) {
+                moved.write('\n');
+            }
+            counter++;
         }
     }
 
