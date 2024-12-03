@@ -25,15 +25,11 @@ async function findResources(target: string, newModule?: string): Promise<Map<st
 
     let lastLine = '';
     for await (const l of rl) {
-        /**
-         * Ignore comments
-         */
-        if (l.startsWith('//') || l.startsWith('#')) {
-            continue;
-        }
-
         let writeLine = l;
-        if (l.includes('resource ') || l.includes('module ')) {
+        if (
+            (!l.startsWith('//') && !l.startsWith('#') && l.includes('resource ')) ||
+            l.includes('module ')
+        ) {
             const from = l
                 .replaceAll('resource ', '')
                 .replaceAll('{', '')

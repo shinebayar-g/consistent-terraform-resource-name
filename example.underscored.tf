@@ -13,6 +13,18 @@ resource "google_service_account_iam_member" "sa_member" {
   member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.something_something.name}/attribute.repository/my-github/repository-name"
 }
 
+#resource "google_pubsub_topic" "foo" {
+#  name = "foo"
+#  labels = {
+#    foo = "bar"
+#  }
+#}
+# resource "google_pubsub_topic" "foo" {
+#  name = "foo"
+#  labels = {
+#    foo = "bar"
+#  }
+# }
 variable "project_id" {
   type    = string
   default = "foo-bar"
@@ -24,6 +36,8 @@ resource "google_service_account_iam_member" "some_workloadIdentityUser" {
   member             = "serviceAccount:foo.svc.id.goog[kube-system/bar]"
 }
 
+# ------------------------------------------------------------------ #
+# ---- START some-team google artifact registry resource --- #
 resource "google_artifact_registry_repository" "some_image_registry" {
   project       = var.project_id
   location      = "us"
