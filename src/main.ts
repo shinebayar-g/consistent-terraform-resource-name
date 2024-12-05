@@ -85,6 +85,7 @@ async function main() {
             }
             targetFileName = filename;
         })
+        .version('0.3.1')
         .parse();
     const options = program.opts();
     const newModule = options.module;
