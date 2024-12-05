@@ -12,7 +12,6 @@
     "strict": true,
     "noImplicitAny": true,
     "noFallthroughCasesInSwitch": true,
-    "noPropertyAccessFromIndexSignature": true,
     "skipLibCheck": true
   },
   "include": ["src/**/*.ts"]

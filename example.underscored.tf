@@ -36,12 +36,40 @@ resource "google_service_account_iam_member" "some_workloadIdentityUser" {
   member             = "serviceAccount:foo.svc.id.goog[kube-system/bar]"
 }
 
-# ------------------------------------------------------------------ #
-# ---- START some-team google artifact registry resource --- #
+# ---------------------------------------------------- #
+# ---- some-team google artifact registry resource --- #
 resource "google_artifact_registry_repository" "some_image_registry" {
   project       = var.project_id
   location      = "us"
   repository_id = "some-images"
   description   = "some repository"
   format        = "DOCKER"
+}
+
+resource "google_service_account_iam_member" "some_service_account_impersonation" {
+  service_account_id = "projects/my-project-id/serviceAccounts/some-service-account-name@my-project-id.iam.gserviceaccount.com"
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principalSet://iam.googleapis.com/${module.my-cluster.iam-workload_identity-pool}/attribute.repository/my-org/my-repo"
+}
+
+resource "google_pubsub_topic_iam_binding" "some_team_pubsub_topic_publisher" {
+  project = var.project_id
+  topic   = google_pubsub_topic.some_team_pubsub.name
+  role    = "roles/pubsub.publisher"
+  members = [
+    "serviceAccount:${google_service_account.some_team_service_account.email}",
+    "serviceAccount:some-service-account@my-project-id.iam.gserviceaccount.com",
+    "group:some_gcp_user-group@example.com",
+  ]
+}
+
+resource "google_pubsub_subscription" "some_team_name_engineer_subscription" {
+  name  = "some_team-name_engineer_subscription"
+  topic = google_pubsub_topic.some_team_name_topic.name
+  bigquery_config {
+    table = "my-project-id.some.table-name"
+  }
+  labels = {
+    team = "some-team-name"
+  }
 }

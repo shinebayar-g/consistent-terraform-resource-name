@@ -3,6 +3,8 @@ import { Command } from 'commander';
 import * as fs from 'node:fs';
 import * as process from 'node:process';
 import * as readline from 'node:readline';
+import { moveResources } from './moveResources';
+import { fixResourceReferences } from './fixResourceReferences';
 
 /**
  * Read the target file and write to a new file with all hyphens replaced with underscores.
@@ -11,9 +13,8 @@ async function findResources(target: string, newModule?: string): Promise<Map<st
     const readStream = fs.createReadStream(`${target}.tf`);
     const rl = readline.createInterface({
         input: readStream,
-        crlfDelay: Infinity,
+        crlfDelay: Number.POSITIVE_INFINITY,
     });
-
     const newFileName = `${target}.underscored.tf`;
     const writeStream = fs.createWriteStream(newFileName);
 
@@ -25,53 +26,11 @@ async function findResources(target: string, newModule?: string): Promise<Map<st
 
     let lastLine = '';
     for await (const l of rl) {
-        let writeLine = l;
-        if (
-            (!l.startsWith('//') && !l.startsWith('#') && l.includes('resource ')) ||
-            l.includes('module ')
-        ) {
-            const from = l
-                .replaceAll('resource ', '')
-                .replaceAll('{', '')
-                .trim()
-                .replaceAll(' ', '.')
-                .replaceAll('"', '');
-            const to = newModule
-                ? `module.${newModule}.` + from.replaceAll('-', '_')
-                : from.replaceAll('-', '_');
-            resources.set(from, to);
-            // Replace all hyphens with underscores in the resource name
-            writeLine = l.replaceAll('-', '_');
-        }
-        /**
-         * Fix all references to the resource name if it's been renamed
-         * Before: google_service_account.my-sa.member
-         * After: google_service_account.my_sa.member
-         */
-        if (!writeLine.startsWith('source') && writeLine.includes('.')) {
-            const parts = writeLine.split('.');
-            for (let i = 0; i < parts.length; i++) {
-                if (parts[i].includes('_')) {
-                    if (parts[i + 1] && parts[i + 1].includes('-')) {
-                        const newPart = parts[i + 1].replaceAll('-', '_');
-                        parts[i + 1] = newPart;
-                        i++;
-                    }
-                }
-            }
-            const updatedLine = parts.join('.');
-            if (writeLine !== updatedLine) {
-                /**
-                 * TODO: Maybe print the diff in a git diff colored format
-                 */
-                console.log('Fixed resource references:');
-                console.log('-', writeLine);
-                console.log('+', updatedLine);
-                writeLine = updatedLine;
-            }
-        }
+        let writeLine = moveResources(resources, l, newModule);
+        // TODO: Only fix references if the resource is moved
+        writeLine = fixResourceReferences(writeLine);
         if (writeLine !== '') {
-            writeStream.write(writeLine + '\n');
+            writeStream.write(`${writeLine}\n`);
         }
         if (lastLine === '}') {
             writeStream.write('\n');
@@ -106,7 +65,7 @@ async function main() {
         })
         .parse();
     const options = program.opts();
-    const newModule = options['module'];
+    const newModule = options.module;
 
     const resources = await findResources(targetFileName, newModule);
 
@@ -120,7 +79,7 @@ async function main() {
   from = ${from}
   to   = ${to}
 }`;
-            moved.write(writeLine + '\n');
+            moved.write(`${writeLine}\n`);
 
             if (counter < resources.size - 1) {
                 moved.write('\n');
