@@ -14,6 +14,11 @@ moved {
 }
 
 moved {
+  from = google_service_account_iam_member.sa-member2
+  to   = google_service_account_iam_member.sa_member2
+}
+
+moved {
   from = google_service_account_iam_member.some-workloadIdentityUser
   to   = google_service_account_iam_member.some_workloadIdentityUser
 }

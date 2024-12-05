@@ -15,8 +15,8 @@ async function findResources(target: string, newModule?: string): Promise<Map<st
         input: readStream,
         crlfDelay: Number.POSITIVE_INFINITY,
     });
-    const newFileName = `${target}.underscored.tf`;
-    const writeStream = fs.createWriteStream(newFileName);
+    const tempFileName = `${target}.temp.tf`;
+    const writeStream = fs.createWriteStream(tempFileName);
 
     /**
      * List of resources and modules found in the target file, not modified.
@@ -26,9 +26,7 @@ async function findResources(target: string, newModule?: string): Promise<Map<st
 
     let lastLine = '';
     for await (const l of rl) {
-        let writeLine = moveResources(resources, l, newModule);
-        // TODO: Only fix references if the resource is moved
-        writeLine = fixResourceReferences(writeLine);
+        const writeLine = moveResources(resources, l, newModule);
         if (writeLine !== '') {
             writeStream.write(`${writeLine}\n`);
         }
@@ -40,7 +38,31 @@ async function findResources(target: string, newModule?: string): Promise<Map<st
 
     writeStream.end();
 
-    console.log('Written to file:', newFileName);
+    /**
+     * Only try to fix resource references if there are resources to move
+     */
+    const readStream2 = fs.createReadStream(tempFileName);
+    const rl2 = readline.createInterface({
+        input: readStream2,
+        crlfDelay: Number.POSITIVE_INFINITY,
+    });
+    const fixedFileName = `${target}.fixed.tf`;
+    const writeStream2 = fs.createWriteStream(fixedFileName);
+
+    for await (const l of rl2) {
+        let writeLine = l;
+        for (const [from, to] of resources) {
+            if (from !== to && writeLine.includes(from)) {
+                writeLine = fixResourceReferences(writeLine);
+            }
+        }
+        writeStream2.write(`${writeLine}\n`);
+    }
+
+    writeStream2.end();
+
+    console.log('Saved to file:', fixedFileName);
+    fs.rmSync(tempFileName);
 
     return resources;
 }
